@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
 	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
 		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
 
-	<context:property-placeholder location="jms.properties" />
+	<context:property-placeholder location="classpath:jms.properties" />
 
 	<bean id="connectionFactory" class="org.apache.activemq.ActiveMQConnectionFactory">
 		<property name="brokerURL" value="${jms.brokerURL}" />
@@ -12,19 +13,22 @@
 	<bean id="messageDestination" class="org.apache.activemq.command.ActiveMQQueue">
 		<constructor-arg value="messageQueue1" />
 	</bean>
+	
 	<bean id="jmsTemplate" class="org.springframework.jms.core.JmsTemplate">
 		<property name="connectionFactory" ref="connectionFactory" />
 		<property name="receiveTimeout" value="${jms.receiveTimeout}" />
+		<property name="defaultDestination" ref="messageDestination" />
+		<property name="messageConverter" ref="personMessageConverter" />
 	</bean>
-
-	<bean id="springJmsProducer" class="com.jms.testing.spring.SpringJmsProducer">
-		<property name="destination" ref="messageDestination" />
-		<property name="jmsTemplate" ref="jmsTemplate" />
-	</bean>
-
-	<bean id="springJmsConsumer" class="com.jms.testing.spring.SpringJmsConsumer">
-		<property name="destination" ref="messageDestination" />
+	
+	<bean id="personMessageConverter" class="com.jms.testing.spring.PersonMessageConverter" />
+	
+	<bean id="springJmsPersonProducer" class="com.jms.testing.spring.SpringJmsPersonProducer">
 		<property name="jmsTemplate" ref="jmsTemplate" />
 	</bean>
 	
+	<bean id="springJmsPersonConsumer" class="com.jms.testing.spring.SpringJmsPersonConsumer">
+		<property name="jmsTemplate" ref="jmsTemplate" />
+	</bean>	
+
 </beans>
