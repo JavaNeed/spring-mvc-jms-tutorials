@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:jms="http://www.springframework.org/schema/jms"
+	xsi:schemaLocation="http://www.springframework.org/schema/jms http://www.springframework.org/schema/jms/spring-jms.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+
+	<context:property-placeholder location="classpath:jms.properties" />
+
+	<bean id="jmsConnectionFactory" class="org.apache.activemq.ActiveMQConnectionFactory">
+		<property name="brokerURL" value="${jms.brokerURL}" />
+	</bean>
+	
+	<bean id="pooledJmsConnectionFactory" class="org.apache.activemq.pool.PooledConnectionFactory" destroy-method="stop">
+		<property name="connectionFactory" ref="jmsConnectionFactory" />
+		<property name="maxConnections" value="50" />
+	</bean>
+	
+	<jms:listener-container container-type="default" connection-factory="pooledJmsConnectionFactory" acknowledge="auto" >
+		<jms:listener destination="messageQueue1" ref="myListener" />
+	</jms:listener-container>
+	
+	<bean id="instructionMessageConverter" class="com.jms.testing.spring.InstructionMessageConverter" />
+	
+	<bean id="myListener" class="com.jms.testing.spring.MyListener" />
+	
+	<bean id="jmsTemplate" class="org.springframework.jms.core.JmsTemplate">
+		<constructor-arg ref="pooledJmsConnectionFactory" />
+		<property name="defaultDestination" ref="messageDestination" />
+		<property name="receiveTimeout" value="${jms.receiveTimeout}" />
+		<!-- <property name="messageConverter" ref="instructionMessageConverter" /> -->
+		
+	</bean>
+	
+	<bean id="springJmsInstProducer" class="com.jms.testing.spring.SpringJmsInstructionMessageProducer">
+		<property name="jmsTemplate" ref="jmsTemplate" />
+	</bean>
+	
+	<bean id="springJmsInstConsumer" class="com.jms.testing.spring.SpringJmsInstructionMessageConsumer">
+		<property name="jmsTemplate" ref="jmsTemplate" />
+	</bean>	
+		
+	<bean id="messageDestination" class="org.apache.activemq.command.ActiveMQQueue">
+		<constructor-arg value="messageQueue1" />
+	</bean>
+</beans>
